@@ -1,4 +1,3 @@
-// ─── Project ────────────────────────────────────────────────
 
 export interface Project {
   id: string;
@@ -9,20 +8,17 @@ export interface Project {
   updatedAt: Date;
 }
 
-// ─── Create ─────────────────────────────────────────────────
 
 export interface CreateProjectDto {
   name: string;
   description?: string;
 }
 
-// ─── Update ─────────────────────────────────────────────────
 
 export interface UpdateProjectDto {
   name?: string;
   description?: string;
 }
 
-// ─── Get All ────────────────────────────────────────────────
 
 export type GetAllProjectsResponse = Project[];
