@@ -1,4 +1,3 @@
-// ─── ApiKey ─────────────────────────────────────────────────
 
 export interface ApiKey {
   id: string;
@@ -12,7 +11,6 @@ export interface ApiKey {
   createdAt: Date;
 }
 
-// ─── Create ─────────────────────────────────────────────────
 
 export interface CreateApiKeyDto {
   projectId: string;
@@ -20,7 +18,6 @@ export interface CreateApiKeyDto {
   expiresAt?: Date;
 }
 
-// ─── Update ─────────────────────────────────────────────────
 
 export interface UpdateApiKeyDto {
   name?: string;
@@ -28,6 +25,5 @@ export interface UpdateApiKeyDto {
   expiresAt?: Date | null;
 }
 
-// ─── Get All ────────────────────────────────────────────────
 
 export type GetAllApiKeysResponse = ApiKey[];
