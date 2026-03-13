@@ -125,3 +125,56 @@ export const GetAllKeys = async (
         };
     }
 };
+
+
+export const DeleteApiKey = async (
+    token: string,
+    keyId: string
+): Promise<ActionResponse<void>> => {
+    try {
+        if (!token) {
+            return {
+                success: false,
+                error: "Authentication required"
+            };
+        }
+
+        const authResult = await getUserIdFromToken(token);
+        if (!authResult.success) {
+            return {
+                success: false,
+                error: authResult.error
+            };
+        }
+
+
+        const [existingKey] = await db.select().from(apiKeys).where(eq(apiKeys.id, keyId)).limit(1);
+        if (!existingKey) {
+            return {
+                success: false,
+                error: "Key not found"
+            };
+        }
+        await db.delete(apiKeys).where(eq(apiKeys.id, keyId));
+
+        return {
+            success: true,
+            data: undefined
+        };
+
+    } catch (error) {
+        console.error("Failed to get key", error);
+
+        if (error instanceof Error && error.message.includes("connection")) {
+            return {
+                success: false,
+                error: "Database connection failed. Please try again later"
+            };
+        }
+
+        return {
+            success: false,
+            error: "Failed to get key. Please try again"
+        };
+    }
+};
