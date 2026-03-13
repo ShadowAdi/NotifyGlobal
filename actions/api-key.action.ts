@@ -3,7 +3,7 @@ import { ActionResponse, ApiKey, CreateApiKeyDto } from "@/types";
 import { getProjectById } from "./project.action";
 import { db } from "@/db/db";
 import { apiKeys } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const createApiKey = async (
     payload: CreateApiKeyDto,
@@ -76,7 +76,8 @@ export const createApiKey = async (
 
 
 export const GetAllKeys = async (
-    token: string
+    token: string,
+    projectId: string
 ): Promise<ActionResponse<ApiKey[]>> => {
     try {
         if (!token) {
@@ -94,7 +95,16 @@ export const GetAllKeys = async (
             };
         }
 
-        const keys = await db.select().from(apiKeys).where(eq(apiKeys.userId, authResult.userId));
+        const projectCheck = await getProjectById(projectId, token);
+        if (!projectCheck.success) {
+            return {
+                success: false,
+                error: "Project not found or you don't have access to it"
+            };
+        }
+
+
+        const keys = await db.select().from(apiKeys).where(and(eq(apiKeys.userId, authResult.userId), eq(apiKeys.projectId, projectCheck.data.id)));
         return {
             success: true,
             data: keys,
