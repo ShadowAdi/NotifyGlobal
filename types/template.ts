@@ -1,4 +1,3 @@
-// ─── Template ───────────────────────────────────────────────
 
 export interface Template {
   id: string;
@@ -11,7 +10,6 @@ export interface Template {
   updatedAt: Date;
 }
 
-// ─── Create ─────────────────────────────────────────────────
 
 export interface CreateTemplateDto {
   projectId: string;
@@ -21,7 +19,6 @@ export interface CreateTemplateDto {
   variables?: string[];
 }
 
-// ─── Update ─────────────────────────────────────────────────
 
 export interface UpdateTemplateDto {
   name?: string;
@@ -30,6 +27,5 @@ export interface UpdateTemplateDto {
   variables?: string[];
 }
 
-// ─── Get All ────────────────────────────────────────────────
 
 export type GetAllTemplatesResponse = Template[];
