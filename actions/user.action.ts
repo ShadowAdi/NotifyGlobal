@@ -171,3 +171,71 @@ export const loginUser = async (email: string, password: string): Promise<Action
         };
     }
 };
+
+
+export const getUserFromToken = async (token: string): Promise<ActionResponse<{
+    id: string;
+    name: string | null;
+    email: string;
+}>> => {
+    try {
+        if (!token) {
+            return {
+                success: false,
+                error: "Token is required"
+            };
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string };
+
+        const [user] = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                email: users.email,
+            })
+            .from(users)
+            .where(eq(users.id, decoded.id))
+            .limit(1);
+
+        if (!user) {
+            return {
+                success: false,
+                error: "User not found"
+            };
+        }
+
+        return {
+            success: true,
+            data: user
+        };
+    } catch (error) {
+        console.error(`Failed to get user from token:`, error);
+
+        if (error instanceof jwt.JsonWebTokenError) {
+            return {
+                success: false,
+                error: "Invalid token"
+            };
+        }
+
+        if (error instanceof jwt.TokenExpiredError) {
+            return {
+                success: false,
+                error: "Token has expired"
+            };
+        }
+
+        if (error instanceof Error && error.message.includes("connection")) {
+            return {
+                success: false,
+                error: "Database connection failed. Please try again later"
+            };
+        }
+
+        return {
+            success: false,
+            error: "Failed to authenticate. Please login again"
+        };
+    }
+};
