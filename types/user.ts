@@ -1,4 +1,3 @@
-// ─── User ───────────────────────────────────────────────────
 
 export interface User {
   id: string;
@@ -8,7 +7,6 @@ export interface User {
   updatedAt: Date;
 }
 
-// ─── Create ─────────────────────────────────────────────────
 
 export interface CreateUserDto {
   email: string;
@@ -16,13 +14,11 @@ export interface CreateUserDto {
   password: string;
 }
 
-// ─── Update ─────────────────────────────────────────────────
 
 export interface UpdateUserDto {
   email?: string;
   name?: string;
 }
 
-// ─── Get All ────────────────────────────────────────────────
 
 export type GetAllUsersResponse = User[];
