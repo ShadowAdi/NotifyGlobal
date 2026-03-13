@@ -3,7 +3,7 @@ import { users } from "@/db/schema";
 import { CreateUserDto } from "@/types";
 import { ActionResponse } from "@/types/action-response";
 import { eq } from "drizzle-orm";
-import { hash } from "bcrypt";
+import { hash,compare } from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -96,3 +96,78 @@ export const createUser = async (payload: CreateUserDto): Promise<ActionResponse
     }
 };
 
+
+export const loginUser = async (email: string, password: string): Promise<ActionResponse<{
+    token: string;
+    user: {
+        id: string;
+        name: string | null;
+        email: string;
+    };
+}>> => {
+    try {
+        if (!email || !password) {
+            return {
+                success: false,
+                error: "Email and password are required"
+            };
+        }
+
+        const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+
+        if (!user) {
+            return {
+                success: false,
+                error: "Invalid email or password"
+            };
+        }
+
+        const isPasswordValid = await compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return {
+                success: false,
+                error: "Invalid email or password"
+            };
+        }
+
+        const token = jwt.sign(
+            {
+                id: user.id,
+                email: user.email
+            },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        return {
+            success: true,
+            data: {
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }
+            }
+        };
+    } catch (error) {
+        console.error(`Login failed:`, error);
+
+        if (error instanceof Error && error.message.includes("connection")) {
+            return {
+                success: false,
+                error: "Database connection failed. Please try again later"
+            };
+        }
+
+        return {
+            success: false,
+            error: "Login failed. Please try again"
+        };
+    }
+};
