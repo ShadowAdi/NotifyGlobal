@@ -28,6 +28,7 @@ export const contacts = pgTable('contacts', {
   name: text('name').notNull(),
   email: text('email').notNull(),
   language: text('language').notNull().default('en'), // ISO language code (en, es, fr, hi, etc.)
+  tags: jsonb('tags'), // Array of tags for filtering (e.g., ['premium', 'active', 'beta-tester'])
   discordUsername: text('discord_username'),
   metadata: jsonb('metadata'), // Additional custom fields from CSV/JSON
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -81,6 +82,10 @@ export const campaigns = pgTable('campaigns', {
   subject: text('subject'), // Optional - only needed if no template, otherwise uses template subject
   message: text('message'), // Optional message body if no template
   channel: text('channel').notNull().default('email'), // email, sms, discord, slack
+  filterType: text('filter_type').notNull().default('manual'), // manual, all, language, tags
+  filterLanguage: text('filter_language'), // Language code if filterType is 'language'
+  filterTags: jsonb('filter_tags'), // Array of tags if filterType is 'tags'
+  contactIds: jsonb('contact_ids'), // Resolved contact IDs (for manual or after filtering)
   status: text('status').notNull().default('draft'), // draft, sending, completed, failed
   totalContacts: text('total_contacts'), // Number as text to avoid integer overflow
   sentCount: text('sent_count').default('0'),
