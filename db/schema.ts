@@ -78,7 +78,7 @@ export const campaigns = pgTable('campaigns', {
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   templateId: uuid('template_id').references(() => templates.id, { onDelete: 'restrict' }), // Optional - can provide message directly
   name: text('name').notNull(),
-  subject: text('subject').notNull(), // Email subject or SMS title
+  subject: text('subject'), // Optional - only needed if no template, otherwise uses template subject
   message: text('message'), // Optional message body if no template
   channel: text('channel').notNull().default('email'), // email, sms, discord, slack
   status: text('status').notNull().default('draft'), // draft, sending, completed, failed

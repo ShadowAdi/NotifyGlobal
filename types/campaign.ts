@@ -9,7 +9,7 @@ export interface Campaign {
   projectId: string;
   templateId: string | null;
   name: string;
-  subject: string;
+  subject: string | null;
   message: string | null;
   channel: CampaignChannel;
   status: CampaignStatus;
@@ -27,7 +27,7 @@ export interface CreateCampaignDto {
   projectId: string;
   templateId?: string; // Optional - if not provided, use message
   name: string;
-  subject: string;
+  subject?: string; // Optional - required only if templateId not provided
   message?: string; // Optional - required if templateId not provided
   channel: CampaignChannel;
   contactIds: string[]; // List of contact IDs to send to
