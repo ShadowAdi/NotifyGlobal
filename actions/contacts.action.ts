@@ -58,6 +58,7 @@ export const createContact = async (
             name: payload.name,
             email: payload.email,
             language: payload.language || 'en',
+            tags: payload.tags || null,
             discordUsername: payload.discordUsername || null,
             metadata: payload.metadata || null
         }).returning();
@@ -66,6 +67,7 @@ export const createContact = async (
             success: true,
             data: {
                 ...contact,
+                tags: (contact.tags ?? null) as string[] | null,
                 metadata: (contact.metadata ?? null) as Record<string, unknown> | null
             }
         };
@@ -143,6 +145,7 @@ export const bulkUploadContacts = async (
             name: contact.name,
             email: contact.email,
             language: contact.language || 'en',
+            tags: contact.tags || null,
             discordUsername: contact.discordUsername || null,
             metadata: contact.metadata || null
         }));
@@ -157,6 +160,7 @@ export const bulkUploadContacts = async (
             data: {
                 created: createdContacts.map(contact => ({
                     ...contact,
+                    tags: (contact.tags ?? null) as string[] | null,
                     metadata: (contact.metadata ?? null) as Record<string, unknown> | null
                 })),
                 failed: invalid.length,
@@ -254,6 +258,7 @@ export const getContactsByProject = async (
             data: {
                 data: contactsData.map(contact => ({
                     ...contact,
+                    tags: (contact.tags ?? null) as string[] | null,
                     metadata: (contact.metadata ?? null) as Record<string, unknown> | null
                 })),
                 total: totalCount,
@@ -325,6 +330,7 @@ export const getContactById = async (
             success: true,
             data: {
                 ...contact,
+                tags: (contact.tags ?? null) as string[] | null,
                 metadata: (contact.metadata ?? null) as Record<string, unknown> | null
             }
         };
@@ -408,6 +414,7 @@ export const updateContact = async (
             success: true,
             data: {
                 ...updatedContact,
+                tags: (updatedContact.tags ?? null) as string[] | null,
                 metadata: (updatedContact.metadata ?? null) as Record<string, unknown> | null
             }
         };
@@ -503,6 +510,7 @@ export const bulkUpdateContacts = async (
 
                 updatedContacts.push({
                     ...updatedContact,
+                    tags: (updatedContact.tags ?? null) as string[] | null,
                     metadata: (updatedContact.metadata ?? null) as Record<string, unknown> | null
                 });
             } catch (err) {
