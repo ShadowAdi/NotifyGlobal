@@ -4,6 +4,7 @@ import { getUserIdFromToken } from "@/lib/auth";
 import { transporter } from "@/config/nodemailer";
 import { and, eq, inArray } from "drizzle-orm";
 import { replaceVariables } from "@/lib/replaceVariable";
+import { LingoDotDevEngine } from "lingo.dev/sdk";
 
 export const SendCampaign = async (
     campaignId: string,
@@ -178,6 +179,11 @@ export const SendCampaign = async (
             })
             .where(eq(campaigns.id, campaignId));
 
+        // --- Initialize Lingo.dev translation engine ---
+        const lingoDotDev = new LingoDotDevEngine({
+            apiKey: process.env.LINGO_API_KEY!,
+        });
+
         let sentCount = 0;
         let failedCount = 0;
 
@@ -186,12 +192,38 @@ export const SendCampaign = async (
             const personalizedSubject = replaceVariables(emailSubject, contact);
             const personalizedBody = replaceVariables(emailBody, contact);
 
+            let finalSubject = personalizedSubject;
+            let finalBody = personalizedBody;
+            let translatedLanguage: string | null = null;
+
+            const targetLocale = contact.language?.toLowerCase();
+
+            if (targetLocale && targetLocale !== "en") {
+                try {
+                    const translated = await lingoDotDev.localizeObject(
+                        { subject: personalizedSubject, body: personalizedBody },
+                        { sourceLocale: "en", targetLocale }
+                    );
+
+                    finalSubject = translated.subject;
+                    finalBody = translated.body;
+                    translatedLanguage = targetLocale;
+                } catch (translateError) {
+                    // If translation fails, fall back to the original English content
+                    console.error(
+                        `Translation to "${targetLocale}" failed for ${contact.email}: ${
+                            translateError instanceof Error ? translateError.message : "Unknown error"
+                        }`
+                    );
+                }
+            }
+
             try {
                 const info = await transporter.sendMail({
                     from: process.env.APP_EMAIL,
                     to: contact.email,
-                    subject: personalizedSubject,
-                    html: personalizedBody,
+                    subject: finalSubject,
+                    html: finalBody,
                 });
 
                 sentCount++;
@@ -203,8 +235,9 @@ export const SendCampaign = async (
                     campaignId: campaign.id,
                     channel: "email",
                     status: "sent",
-                    subject: personalizedSubject,
-                    body: personalizedBody,
+                    translatedLanguage,
+                    subject: finalSubject,
+                    body: finalBody,
                     externalId: info.messageId ?? null,
                     sentAt: new Date(),
                 });
@@ -220,8 +253,9 @@ export const SendCampaign = async (
                     campaignId: campaign.id,
                     channel: "email",
                     status: "failed",
-                    subject: personalizedSubject,
-                    body: personalizedBody,
+                    translatedLanguage,
+                    subject: finalSubject,
+                    body: finalBody,
                     errorMessage: errorMsg,
                 });
             }
