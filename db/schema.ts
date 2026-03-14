@@ -76,8 +76,11 @@ export const apiKeys = pgTable('api_keys', {
 export const campaigns = pgTable('campaigns', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
-  eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'restrict' }),
+  templateId: uuid('template_id').references(() => templates.id, { onDelete: 'restrict' }), // Optional - can provide message directly
   name: text('name').notNull(),
+  subject: text('subject').notNull(), // Email subject or SMS title
+  message: text('message'), // Optional message body if no template
+  channel: text('channel').notNull().default('email'), // email, sms, discord, slack
   status: text('status').notNull().default('draft'), // draft, sending, completed, failed
   totalContacts: text('total_contacts'), // Number as text to avoid integer overflow
   sentCount: text('sent_count').default('0'),
@@ -170,9 +173,9 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     fields: [campaigns.projectId],
     references: [projects.id],
   }),
-  event: one(events, {
-    fields: [campaigns.eventId],
-    references: [events.id],
+  template: one(templates, {
+    fields: [campaigns.templateId],
+    references: [templates.id],
   }),
   sendLogs: many(sendLogs),
 }));

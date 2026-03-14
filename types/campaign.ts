@@ -1,14 +1,17 @@
-// ─── Campaign Status ────────────────────────────────────────
 
 export type CampaignStatus = "draft" | "sending" | "completed" | "failed";
 
-// ─── Campaign ───────────────────────────────────────────────
+
+export type CampaignChannel = "email" | "sms" | "discord" | "slack";
 
 export interface Campaign {
   id: string;
   projectId: string;
-  eventId: string;
+  templateId: string | null;
   name: string;
+  subject: string;
+  message: string | null;
+  channel: CampaignChannel;
   status: CampaignStatus;
   totalContacts: string | null;
   sentCount: string;
@@ -19,23 +22,27 @@ export interface Campaign {
   createdAt: Date;
 }
 
-// ─── Create ─────────────────────────────────────────────────
 
 export interface CreateCampaignDto {
   projectId: string;
-  eventId: string;
+  templateId?: string; // Optional - if not provided, use message
   name: string;
+  subject: string;
+  message?: string; // Optional - required if templateId not provided
+  channel: CampaignChannel;
+  contactIds: string[]; // List of contact IDs to send to
   scheduledAt?: Date;
 }
 
-// ─── Update ─────────────────────────────────────────────────
 
 export interface UpdateCampaignDto {
   name?: string;
+  subject?: string;
+  message?: string | null;
+  channel?: CampaignChannel;
   status?: CampaignStatus;
   scheduledAt?: Date | null;
 }
 
-// ─── Get All ────────────────────────────────────────────────
 
 export type GetAllCampaignsResponse = Campaign[];
