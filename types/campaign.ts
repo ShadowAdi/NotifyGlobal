@@ -30,7 +30,6 @@ export interface Campaign {
 
 
 export interface CreateCampaignDto {
-  projectId: string;
   templateId?: string; // Optional - if not provided, use message
   name: string;
   subject?: string; // Optional - required only if templateId not provided
