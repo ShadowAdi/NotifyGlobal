@@ -1,3 +1,5 @@
+"use server";
+
 import { getUserIdFromToken } from "@/lib/auth";
 import { ActionResponse, ApiKey, CreateApiKeyDto } from "@/types";
 import { getProjectById } from "./project.action";

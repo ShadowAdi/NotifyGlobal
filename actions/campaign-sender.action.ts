@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db/db";
 import { campaigns, templates, users } from "@/db/schema";
 import { getUserIdFromToken } from "@/lib/auth";

@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
 import { CreateUserDto } from "@/types";
