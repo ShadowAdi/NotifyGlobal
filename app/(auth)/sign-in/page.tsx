@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Loader2, Mail, Lock } from "lucide-react";
 
 import { loginSchema, type LoginInput } from "@/lib/validators/auth";
+import { loginUser } from "@/actions/user.action";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +22,8 @@ import {
 } from "@/components/ui/card";
 
 export default function SignInPage() {
+  const { login } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -33,12 +37,13 @@ export default function SignInPage() {
   });
 
   async function onSubmit(data: LoginInput) {
-    try {
-      // TODO: implement login action
-      console.log("Login data:", data);
+    const result = await loginUser(data.email, data.password);
+
+    if (result.success) {
       toast.success("Signed in successfully!");
-    } catch {
-      toast.error("Invalid email or password.");
+      login(result.data.token, result.data.user);
+    } else {
+      toast.error(result.error);
     }
   }
 

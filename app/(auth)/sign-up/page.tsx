@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 
 import { registerSchema, type RegisterInput } from "@/lib/validators/auth";
+import { createUser } from "@/actions/user.action";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +22,8 @@ import {
 } from "@/components/ui/card";
 
 export default function SignUpPage() {
+  const { login } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -35,12 +39,17 @@ export default function SignUpPage() {
   });
 
   async function onSubmit(data: RegisterInput) {
-    try {
-      // TODO: implement register action
-      console.log("Register data:", data);
+    const result = await createUser({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+    });
+
+    if (result.success) {
       toast.success("Account created successfully!");
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+      login(result.data.token, result.data.user);
+    } else {
+      toast.error(result.error);
     }
   }
 
