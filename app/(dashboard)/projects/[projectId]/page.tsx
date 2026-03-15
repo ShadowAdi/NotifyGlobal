@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getProjectById } from "@/actions/project.action";
+import { getTemplatesByProject } from "@/actions/template.action";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +25,7 @@ import {
   Key,
   Send,
   Calendar,
+  ArrowRight,
 } from "lucide-react";
 import type { Project } from "@/types";
 
@@ -32,6 +34,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const { user, token, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
+  const [templateCount, setTemplateCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,12 +45,19 @@ export default function ProjectPage() {
     setLoading(true);
     setError(null);
 
-    const result = await getProjectById(projectId, token);
+    const [projectResult, templatesResult] = await Promise.all([
+      getProjectById(projectId, token),
+      getTemplatesByProject(projectId, token, { limit: 1 }),
+    ]);
 
-    if (result.success) {
-      setProject(result.data);
+    if (projectResult.success) {
+      setProject(projectResult.data);
     } else {
-      setError(result.error);
+      setError(projectResult.error);
+    }
+
+    if (templatesResult.success) {
+      setTemplateCount(templatesResult.data.total);
     }
 
     setLoading(false);
@@ -108,31 +118,36 @@ export default function ProjectPage() {
       label: "Templates",
       description: "Email templates with variables and translations",
       icon: Mail,
-      count: "—",
+      count: String(templateCount),
+      href: `/projects/${projectId}/templates`,
     },
     {
       label: "Contacts",
       description: "Recipients with language preferences",
       icon: Users,
       count: "—",
+      href: null,
     },
     {
       label: "Events",
       description: "Trigger definitions for automated notifications",
       icon: Zap,
       count: "—",
+      href: null,
     },
     {
       label: "API Keys",
       description: "Authentication keys for API access",
       icon: Key,
       count: "—",
+      href: null,
     },
     {
       label: "Campaigns",
       description: "Bulk notification sends to contacts",
       icon: Send,
       count: "—",
+      href: null,
     },
   ];
 
@@ -208,7 +223,19 @@ export default function ProjectPage() {
         {/* Project sections */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section) => (
-            <Card key={section.label} className="transition-shadow hover:shadow-md">
+            <Card
+              key={section.label}
+              className={
+                section.href
+                  ? "cursor-pointer transition-shadow hover:shadow-md"
+                  : "transition-shadow"
+              }
+              onClick={
+                section.href
+                  ? () => router.push(section.href!)
+                  : undefined
+              }
+            >
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
                   <section.icon className="size-5 text-muted-foreground" />
@@ -219,14 +246,19 @@ export default function ProjectPage() {
                     {section.description}
                   </CardDescription>
                 </div>
+                {section.href && (
+                  <ArrowRight className="size-4 text-muted-foreground" />
+                )}
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-foreground">
                   {section.count}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Coming soon
-                </p>
+                {!section.href && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Coming soon
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}
