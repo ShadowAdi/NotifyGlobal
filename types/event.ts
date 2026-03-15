@@ -5,7 +5,10 @@ export interface Event {
   projectId: string;
   eventName: string;
   eventId: string;
-  templateId: string;
+  templateId: string | null;
+  subject: string | null;
+  message: string | null;
+  channel: string;
   description: string | null;
   isActive: boolean;
   createdAt: Date;
@@ -18,7 +21,10 @@ export interface CreateEventDto {
   projectId: string;
   eventName: string;
   eventId: string;
-  templateId: string;
+  templateId?: string;
+  subject?: string;
+  message?: string;
+  channel?: string;
   description?: string;
   isActive?: boolean;
 }
@@ -27,7 +33,10 @@ export interface CreateEventDto {
 
 export interface UpdateEventDto {
   eventName?: string;
-  templateId?: string;
+  templateId?: string | null;
+  subject?: string | null;
+  message?: string | null;
+  channel?: string;
   description?: string | null;
   isActive?: boolean;
 }
@@ -35,3 +44,15 @@ export interface UpdateEventDto {
 // ─── Get All ────────────────────────────────────────────────
 
 export type GetAllEventsResponse = Event[];
+
+// ─── Trigger (request body from external APIs) ──────────────
+
+export interface TriggerEventBody {
+  eventId: string;
+  email: string;
+  name?: string;
+  language?: string;
+  subject?: string;
+  message?: string;
+  variables?: Record<string, string>;
+}

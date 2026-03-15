@@ -4,7 +4,8 @@ import { transporter } from "@/config/nodemailer";
 
 interface SendEmailParams {
     projectId: string;
-    campaignId: string;
+    campaignId?: string | null;
+    eventId?: string | null;
     contact: {
         id: string;
         email: string;
@@ -23,7 +24,7 @@ interface SendEmailResult {
  * Sends a single email to a contact and logs the result in the send_logs table.
  */
 export async function sendEmailToContact(params: SendEmailParams): Promise<SendEmailResult> {
-    const { projectId, campaignId, contact, subject, body, translatedLanguage } = params;
+    const { projectId, campaignId, eventId, contact, subject, body, translatedLanguage } = params;
 
     try {
         const info = await transporter.sendMail({
@@ -36,7 +37,8 @@ export async function sendEmailToContact(params: SendEmailParams): Promise<SendE
         await db.insert(sendLogs).values({
             projectId,
             contactId: contact.id,
-            campaignId,
+            campaignId: campaignId ?? undefined,
+            eventId: eventId ?? undefined,
             channel: "email",
             status: "sent",
             translatedLanguage,
@@ -54,7 +56,8 @@ export async function sendEmailToContact(params: SendEmailParams): Promise<SendE
         await db.insert(sendLogs).values({
             projectId,
             contactId: contact.id,
-            campaignId,
+            campaignId: campaignId ?? undefined,
+            eventId: eventId ?? undefined,
             channel: "email",
             status: "failed",
             translatedLanguage,

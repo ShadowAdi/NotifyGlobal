@@ -53,7 +53,10 @@ export const events = pgTable('events', {
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   eventName: text('event_name').notNull(), // e.g., "user_signup", "payment_received"
   eventId: text('event_id').notNull().unique(), // e.g., "evt_abc123" - used in API calls
-  templateId: uuid('template_id').notNull().references(() => templates.id, { onDelete: 'restrict' }),
+  templateId: uuid('template_id').references(() => templates.id, { onDelete: 'restrict' }), // Optional — use template OR inline subject+message
+  subject: text('subject'), // Inline subject (used when no template)
+  message: text('message'), // Inline body (used when no template)
+  channel: text('channel').notNull().default('email'), // email, discord, slack
   description: text('description'),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -158,7 +161,6 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     fields: [events.templateId],
     references: [templates.id],
   }),
-  campaigns: many(campaigns),
   sendLogs: many(sendLogs),
 }));
 
