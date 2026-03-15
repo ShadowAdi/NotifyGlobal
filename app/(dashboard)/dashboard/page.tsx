@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { getUserProjects } from "@/actions/project.action";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
 import {
   Loader2,
   LogOut,
@@ -12,17 +20,37 @@ import {
   Mail,
   Users,
   BarChart3,
+  ArrowRight,
 } from "lucide-react";
+import type { Project } from "@/types";
 
 export default function DashboardPage() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, token, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+
+  const fetchProjects = useCallback(async () => {
+    if (!token) return;
+    setProjectsLoading(true);
+    const result = await getUserProjects(token, { limit: 50 });
+    if (result.success) {
+      setProjects(result.data.data);
+    }
+    setProjectsLoading(false);
+  }, [token]);
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/sign-in");
     }
   }, [isLoading, user, router]);
+
+  useEffect(() => {
+    if (token) {
+      fetchProjects();
+    }
+  }, [token, fetchProjects]);
 
   if (isLoading) {
     return (
@@ -35,7 +63,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const stats = [
-    { label: "Projects", value: "—", icon: FolderOpen },
+    { label: "Projects", value: String(projects.length), icon: FolderOpen },
     { label: "Templates", value: "—", icon: Mail },
     { label: "Contacts", value: "—", icon: Users },
     { label: "Campaigns", value: "—", icon: BarChart3 },
@@ -71,11 +99,14 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">
-            Welcome back, {user.name ?? "there"}!
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="mt-1 text-muted-foreground">
+              Welcome back, {user.name ?? "there"}!
+            </p>
+          </div>
+          <CreateProjectDialog onProjectCreated={fetchProjects} />
         </div>
 
         {/* Stats grid */}
@@ -97,19 +128,58 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Empty state */}
-        <Card className="mt-8">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FolderOpen className="mb-4 size-12 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">
-              No projects yet
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create your first project to start sending multilingual
-              notifications.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Projects section */}
+        <div className="mt-10">
+          <h2 className="mb-4 text-xl font-semibold text-foreground">
+            Your Projects
+          </h2>
+
+          {projectsLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : projects.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <FolderOpen className="mb-4 size-12 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  No projects yet
+                </h3>
+                <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                  Create your first project to start sending multilingual
+                  notifications.
+                </p>
+                <CreateProjectDialog onProjectCreated={fetchProjects} />
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => (
+                <Card
+                  key={project.id}
+                  className="cursor-pointer transition-shadow hover:shadow-md"
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                >
+                  <CardHeader>
+                    <CardTitle>{project.name}</CardTitle>
+                    {project.description && (
+                      <CardDescription className="line-clamp-2">
+                        {project.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Created{" "}
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </span>
+                    <ArrowRight className="size-4 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
