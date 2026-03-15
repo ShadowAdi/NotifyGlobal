@@ -4,6 +4,9 @@ import { getProjectById } from "./project.action";
 import { db } from "@/db/db";
 import { apiKeys } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import jwt from "jsonwebtoken";
+
+const API_KEY_SECRET = process.env.API_KEY_SECRET || process.env.JWT_SECRET || "api-key-secret-change-in-production";
 
 export const createApiKey = async (
     payload: CreateApiKeyDto,
@@ -42,10 +45,22 @@ export const createApiKey = async (
         }
 
 
-        const [contact] = await db.insert(apiKeys).values({
+        const signedKey = jwt.sign(
+            {
+                userId: authResult.userId,
+                projectId: payload.projectId,
+                type: "api_key",
+            },
+            API_KEY_SECRET,
+            payload.expiresAt
+                ? { expiresIn: Math.floor((payload.expiresAt.getTime() - Date.now()) / 1000) }
+                : undefined
+        );
+
+        const [apiKey] = await db.insert(apiKeys).values({
             projectId: payload.projectId,
             name: payload.name,
-            key: crypto.randomUUID(),
+            key: signedKey,
             userId: authResult.userId,
             expiresAt: payload.expiresAt,
             isActive: true,
@@ -54,11 +69,11 @@ export const createApiKey = async (
         return {
             success: true,
             data: {
-                ...contact,
+                ...apiKey,
             }
         };
     } catch (error) {
-        console.error("Failed to create contact:", error);
+        console.error("Failed to create API key:", error);
 
         if (error instanceof Error && error.message.includes("connection")) {
             return {
@@ -69,7 +84,7 @@ export const createApiKey = async (
 
         return {
             success: false,
-            error: "Failed to create contact. Please try again"
+            error: "Failed to create API key. Please try again"
         };
     }
 };
@@ -162,7 +177,7 @@ export const DeleteApiKey = async (
         };
 
     } catch (error) {
-        console.error("Failed to get key", error);
+        console.error("Failed to delete API key:", error);
 
         if (error instanceof Error && error.message.includes("connection")) {
             return {
@@ -173,7 +188,7 @@ export const DeleteApiKey = async (
 
         return {
             success: false,
-            error: "Failed to get key. Please try again"
+            error: "Failed to delete API key. Please try again"
         };
     }
 };
