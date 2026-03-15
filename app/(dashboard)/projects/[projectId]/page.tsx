@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getProjectById } from "@/actions/project.action";
 import { getTemplatesByProject } from "@/actions/template.action";
 import { getContactsByProject } from "@/actions/contacts.action";
+import { getAllCampaigns } from "@/actions/campaign.action";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +38,7 @@ export default function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [templateCount, setTemplateCount] = useState<number>(0);
   const [contactCount, setContactCount] = useState<number>(0);
+  const [campaignCount, setCampaignCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,10 +49,11 @@ export default function ProjectPage() {
     setLoading(true);
     setError(null);
 
-    const [projectResult, templatesResult, contactsResult] = await Promise.all([
+    const [projectResult, templatesResult, contactsResult, campaignsResult] = await Promise.all([
       getProjectById(projectId, token),
       getTemplatesByProject(projectId, token, { limit: 1 }),
       getContactsByProject(projectId, token, { limit: 1 }),
+      getAllCampaigns(projectId, token, { limit: 1 }),
     ]);
 
     if (projectResult.success) {
@@ -65,6 +68,10 @@ export default function ProjectPage() {
 
     if (contactsResult.success) {
       setContactCount(contactsResult.data.total);
+    }
+
+    if (campaignsResult.success) {
+      setCampaignCount(campaignsResult.data.total);
     }
 
     setLoading(false);
@@ -153,8 +160,8 @@ export default function ProjectPage() {
       label: "Campaigns",
       description: "Bulk notification sends to contacts",
       icon: Send,
-      count: "—",
-      href: null,
+      count: String(campaignCount),
+      href: `/projects/${projectId}/campaigns`,
     },
   ];
 
