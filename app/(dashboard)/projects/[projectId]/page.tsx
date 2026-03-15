@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getProjectById } from "@/actions/project.action";
 import { getTemplatesByProject } from "@/actions/template.action";
+import { getContactsByProject } from "@/actions/contacts.action";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,6 +36,7 @@ export default function ProjectPage() {
   const { user, token, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [templateCount, setTemplateCount] = useState<number>(0);
+  const [contactCount, setContactCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,9 +47,10 @@ export default function ProjectPage() {
     setLoading(true);
     setError(null);
 
-    const [projectResult, templatesResult] = await Promise.all([
+    const [projectResult, templatesResult, contactsResult] = await Promise.all([
       getProjectById(projectId, token),
       getTemplatesByProject(projectId, token, { limit: 1 }),
+      getContactsByProject(projectId, token, { limit: 1 }),
     ]);
 
     if (projectResult.success) {
@@ -58,6 +61,10 @@ export default function ProjectPage() {
 
     if (templatesResult.success) {
       setTemplateCount(templatesResult.data.total);
+    }
+
+    if (contactsResult.success) {
+      setContactCount(contactsResult.data.total);
     }
 
     setLoading(false);
@@ -125,8 +132,8 @@ export default function ProjectPage() {
       label: "Contacts",
       description: "Recipients with language preferences",
       icon: Users,
-      count: "—",
-      href: null,
+      count: String(contactCount),
+      href: `/projects/${projectId}/contacts`,
     },
     {
       label: "Events",
