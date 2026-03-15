@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { getProjectById } from "@/actions/project.action";
-import { getContactsByProject } from "@/actions/contacts.action";
+import { getContactsByProject, bulkDeleteContacts } from "@/actions/contacts.action";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,10 +20,10 @@ import {
   ArrowLeft,
   Users,
   Plus,
-  Mail,
-  Languages,
-  Tag,
-  ArrowRight,
+  Trash2,
+  CheckSquare,
+  Square,
+  Pencil,
 } from "lucide-react";
 import type { Project, Contact } from "@/types";
 
@@ -32,7 +33,9 @@ export default function ContactsPage() {
   const { user, token, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const projectId = params.projectId as string;
@@ -44,7 +47,7 @@ export default function ContactsPage() {
 
     const [projectResult, contactsResult] = await Promise.all([
       getProjectById(projectId, token),
-      getContactsByProject(projectId, token, { limit: 100 }),
+      getContactsByProject(projectId, token, { limit: 500 }),
     ]);
 
     if (projectResult.success) {
@@ -71,6 +74,46 @@ export default function ContactsPage() {
       fetchData();
     }
   }, [token, projectId, fetchData]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === contacts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(contacts.map((c) => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    const confirmed = confirm(
+      `Are you sure you want to delete ${selectedIds.size} contact(s)? This action cannot be undone.`
+    );
+    
+    if (!confirmed || !token) return;
+
+    setDeleting(true);
+    const result = await bulkDeleteContacts(Array.from(selectedIds), token);
+    
+    if (result.success) {
+      toast.success(`${selectedIds.size} contact(s) deleted successfully`);
+      setSelectedIds(new Set());
+      fetchData();
+    } else {
+      toast.error(result.error);
+    }
+    setDeleting(false);
+  };
 
   if (authLoading || loading) {
     return (
@@ -140,7 +183,7 @@ export default function ContactsPage() {
         </Button>
 
         {/* Page header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Contacts</h1>
             <p className="mt-1 text-muted-foreground">
@@ -162,7 +205,50 @@ export default function ContactsPage() {
           </div>
         </div>
 
-        {/* Contacts list */}
+        {/* Bulk actions */}
+        {contacts.length > 0 && (
+          <div className="mb-4 flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSelectAll}
+            >
+              {selectedIds.size === contacts.length ? (
+                <>
+                  <Square className="mr-2 size-4" />
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="mr-2 size-4" />
+                  Select All
+                </>
+              )}
+            </Button>
+            {selectedIds.size > 0 && (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size} selected
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 size-4" />
+                  )}
+                  Delete Selected
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Contacts table */}
         {contacts.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -186,55 +272,109 @@ export default function ContactsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {contacts.map((contact) => (
-              <Card
-                key={contact.id}
-                className="cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() =>
-                  router.push(`/projects/${projectId}/contacts/${contact.id}`)
-                }
-              >
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{contact.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-1.5 line-clamp-1">
-                    <Mail className="size-3" />
-                    {contact.email}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Languages className="size-3.5" />
-                    <span className="uppercase">{contact.language}</span>
-                  </div>
-                  {contact.tags && contact.tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1">
-                      <Tag className="size-3 text-muted-foreground" />
-                      {contact.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-border bg-muted/50">
+                  <tr>
+                    <th className="w-12 px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === contacts.length && contacts.length > 0}
+                        onChange={toggleSelectAll}
+                        className="size-4 cursor-pointer rounded border-gray-300"
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Language
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Tags
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                      Created
+                    </th>
+                    <th className="w-20 px-4 py-3 text-center text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {contacts.map((contact) => (
+                    <tr
+                      key={contact.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        selectedIds.has(contact.id) ? "bg-muted/50" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(contact.id)}
+                          onChange={() => toggleSelect(contact.id)}
+                          className="size-4 cursor-pointer rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                        {contact.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {contact.email}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-800 uppercase">
+                          {contact.language}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {contact.tags && contact.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {contact.tags.slice(0, 3).map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {contact.tags.length > 3 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{contact.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {new Date(contact.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            router.push(
+                              `/projects/${projectId}/contacts/${contact.id}/edit`
+                            )
+                          }
                         >
-                          {tag}
-                        </span>
-                      ))}
-                      {contact.tags.length > 2 && (
-                        <span className="text-[10px] text-muted-foreground">
-                          +{contact.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(contact.createdAt).toLocaleDateString()}
-                    </span>
-                    <ArrowRight className="size-4 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                          <Pencil className="size-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </main>
     </div>
