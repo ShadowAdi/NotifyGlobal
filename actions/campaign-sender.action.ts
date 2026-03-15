@@ -1,10 +1,11 @@
 import { db } from "@/db/db";
-import { campaigns, contacts, sendLogs, templates, users } from "@/db/schema";
+import { campaigns, templates, users } from "@/db/schema";
 import { getUserIdFromToken } from "@/lib/auth";
-import { transporter } from "@/config/nodemailer";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { replaceVariables } from "@/lib/replaceVariable";
-import { LingoDotDevEngine } from "lingo.dev/sdk";
+import { getFilteredContacts } from "@/lib/contact-filter";
+import { translateContent } from "@/lib/translate";
+import { sendEmailToContact } from "@/lib/email-sender";
 
 export const SendCampaign = async (
     campaignId: string,
@@ -12,28 +13,19 @@ export const SendCampaign = async (
 ) => {
     try {
         if (!token) {
-            return {
-                success: false,
-                error: "Authentication required"
-            };
+            return { success: false, error: "Authentication required" };
         }
 
         const authResult = await getUserIdFromToken(token);
         if (!authResult.success) {
-            return {
-                success: false,
-                error: authResult.error
-            };
+            return { success: false, error: authResult.error };
         }
 
         const userId = authResult.userId;
 
         const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         if (!user) {
-            return {
-                success: false,
-                error: "User not found"
-            };
+            return { success: false, error: "User not found" };
         }
 
         const [campaign] = await db
@@ -43,26 +35,18 @@ export const SendCampaign = async (
             .limit(1);
 
         if (!campaign) {
-            return {
-                success: false,
-                error: "Campaign not found"
-            };
+            return { success: false, error: "Campaign not found" };
         }
 
         if (campaign.channel !== "email") {
-            return {
-                success: false,
-                error: "Only email campaigns are supported at this time"
-            };
+            return { success: false, error: "Only email campaigns are supported at this time" };
         }
 
         if (campaign.status !== "draft") {
-            return {
-                success: false,
-                error: `Campaign cannot be sent because it is already "${campaign.status}"`
-            };
+            return { success: false, error: `Campaign cannot be sent because it is already "${campaign.status}"` };
         }
 
+        // --- Resolve subject & body (template or inline) ---
         let emailSubject = campaign.subject;
         let emailBody = campaign.message;
 
@@ -74,10 +58,7 @@ export const SendCampaign = async (
                 .limit(1);
 
             if (!template) {
-                return {
-                    success: false,
-                    error: "Template linked to this campaign was not found"
-                };
+                return { success: false, error: "Template linked to this campaign was not found" };
             }
 
             emailSubject = template.subject;
@@ -85,91 +66,31 @@ export const SendCampaign = async (
         }
 
         if (!emailSubject || !emailBody) {
-            return {
-                success: false,
-                error: "Campaign must have a subject and body (either directly or via a template)"
-            };
+            return { success: false, error: "Campaign must have a subject and body (either directly or via a template)" };
         }
 
-        let contactList: {
-            id: string;
-            name: string;
-            email: string;
-            language: string;
-            tags: unknown;
-            metadata: unknown;
-        }[] = [];
-
+        // --- Fetch contacts ---
         const projectId = campaign.projectId;
 
-        switch (campaign.filterType) {
-            case "all": {
-                contactList = await db
-                    .select()
-                    .from(contacts)
-                    .where(eq(contacts.projectId, projectId));
-                break;
-            }
-            case "language": {
-                if (!campaign.filterLanguage) {
-                    return { success: false, error: "Filter language is not set for this campaign" };
-                }
-                contactList = await db
-                    .select()
-                    .from(contacts)
-                    .where(
-                        and(
-                            eq(contacts.projectId, projectId),
-                            eq(contacts.language, campaign.filterLanguage)
-                        )
-                    );
-                break;
-            }
-            case "tags": {
-                // Fetch all project contacts and filter by tags in JS
-                // (jsonb array containment varies by driver)
-                const filterTags = campaign.filterTags as string[] | null;
-                if (!filterTags || filterTags.length === 0) {
-                    return { success: false, error: "Filter tags are not set for this campaign" };
-                }
-                const allContacts = await db
-                    .select()
-                    .from(contacts)
-                    .where(eq(contacts.projectId, projectId));
+        const contactResult = await getFilteredContacts({
+            projectId,
+            filterType: campaign.filterType,
+            filterLanguage: campaign.filterLanguage,
+            filterTags: campaign.filterTags as string[] | null,
+            contactIds: campaign.contactIds as string[] | null,
+        });
 
-                contactList = allContacts.filter((c) => {
-                    const contactTags = c.tags as string[] | null;
-                    if (!contactTags) return false;
-                    return filterTags.some((tag) => contactTags.includes(tag));
-                });
-                break;
-            }
-            case "manual":
-            default: {
-                const ids = campaign.contactIds as string[] | null;
-                if (!ids || ids.length === 0) {
-                    return { success: false, error: "No contacts selected for this campaign" };
-                }
-                contactList = await db
-                    .select()
-                    .from(contacts)
-                    .where(
-                        and(
-                            eq(contacts.projectId, projectId),
-                            inArray(contacts.id, ids)
-                        )
-                    );
-                break;
-            }
+        if (!contactResult.success) {
+            return { success: false, error: contactResult.error };
         }
+
+        const contactList = contactResult.contacts;
 
         if (contactList.length === 0) {
-            return {
-                success: false,
-                error: "No contacts found matching the campaign filters"
-            };
+            return { success: false, error: "No contacts found matching the campaign filters" };
         }
 
+        // --- Mark campaign as sending ---
         await db
             .update(campaigns)
             .set({
@@ -179,88 +100,35 @@ export const SendCampaign = async (
             })
             .where(eq(campaigns.id, campaignId));
 
-        // --- Initialize Lingo.dev translation engine ---
-        const lingoDotDev = new LingoDotDevEngine({
-            apiKey: process.env.LINGO_API_KEY!,
-        });
-
+        // --- Send to each contact ---
         let sentCount = 0;
         let failedCount = 0;
 
         for (const contact of contactList) {
-            // Replace {{variables}} with contact data
             const personalizedSubject = replaceVariables(emailSubject, contact);
             const personalizedBody = replaceVariables(emailBody, contact);
 
-            let finalSubject = personalizedSubject;
-            let finalBody = personalizedBody;
-            let translatedLanguage: string | null = null;
+            const { subject: finalSubject, body: finalBody, translatedLanguage } =
+                await translateContent(
+                    { subject: personalizedSubject, body: personalizedBody },
+                    contact.language
+                );
 
-            const targetLocale = contact.language?.toLowerCase();
+            const result = await sendEmailToContact({
+                projectId,
+                campaignId: campaign.id,
+                contact,
+                subject: finalSubject,
+                body: finalBody,
+                translatedLanguage,
+            });
 
-            if (targetLocale && targetLocale !== "en") {
-                try {
-                    const translated = await lingoDotDev.localizeObject(
-                        { subject: personalizedSubject, body: personalizedBody },
-                        { sourceLocale: "en", targetLocale }
-                    );
-
-                    finalSubject = translated.subject;
-                    finalBody = translated.body;
-                    translatedLanguage = targetLocale;
-                } catch (translateError) {
-                    // If translation fails, fall back to the original English content
-                    console.error(
-                        `Translation to "${targetLocale}" failed for ${contact.email}: ${
-                            translateError instanceof Error ? translateError.message : "Unknown error"
-                        }`
-                    );
-                }
-            }
-
-            try {
-                const info = await transporter.sendMail({
-                    from: process.env.APP_EMAIL,
-                    to: contact.email,
-                    subject: finalSubject,
-                    html: finalBody,
-                });
-
+            if (result.success) {
                 sentCount++;
-
-                // Create a send log for this successful send
-                await db.insert(sendLogs).values({
-                    projectId,
-                    contactId: contact.id,
-                    campaignId: campaign.id,
-                    channel: "email",
-                    status: "sent",
-                    translatedLanguage,
-                    subject: finalSubject,
-                    body: finalBody,
-                    externalId: info.messageId ?? null,
-                    sentAt: new Date(),
-                });
-            } catch (sendError) {
+            } else {
                 failedCount++;
-                const errorMsg = sendError instanceof Error ? sendError.message : "Unknown error";
-                console.error(`Failed to send email to ${contact.email}: ${errorMsg}`);
-
-                // Create a send log for this failed send
-                await db.insert(sendLogs).values({
-                    projectId,
-                    contactId: contact.id,
-                    campaignId: campaign.id,
-                    channel: "email",
-                    status: "failed",
-                    translatedLanguage,
-                    subject: finalSubject,
-                    body: finalBody,
-                    errorMessage: errorMsg,
-                });
             }
 
-            // Update running counts on the campaign
             await db
                 .update(campaigns)
                 .set({
@@ -270,6 +138,7 @@ export const SendCampaign = async (
                 .where(eq(campaigns.id, campaignId));
         }
 
+        // --- Finalize ---
         const finalStatus = failedCount === contactList.length ? "failed" : "completed";
 
         await db
@@ -293,7 +162,7 @@ export const SendCampaign = async (
             },
         };
     } catch (error) {
-        console.error(`Failed to send campaign to people ${error}`);
+        console.error(`Failed to send campaign: ${error}`);
 
         try {
             await db
@@ -304,15 +173,9 @@ export const SendCampaign = async (
         }
 
         if (error instanceof Error && error.message.includes("connection")) {
-            return {
-                success: false,
-                error: "Database connection error. Please try again."
-            };
+            return { success: false, error: "Database connection error. Please try again." };
         }
 
-        return {
-            success: false,
-            error: "Failed to send campaign. Please try again."
-        };
+        return { success: false, error: "Failed to send campaign. Please try again." };
     }
 };
