@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CreateTemplateDialog } from "@/components/templates/create-template-dialog";
 import {
   Loader2,
   ArrowLeft,
@@ -21,6 +20,7 @@ import {
   ArrowRight,
   Code,
   FileText,
+  Plus,
 } from "lucide-react";
 import type { Project, Template } from "@/types";
 
@@ -152,10 +152,10 @@ export default function TemplatesPage() {
               </span>
             </p>
           </div>
-          <CreateTemplateDialog
-            projectId={projectId}
-            onTemplateCreated={fetchData}
-          />
+          <Button onClick={() => router.push(`/projects/${projectId}/templates/new`)}>
+            <Plus className="mr-2 size-4" />
+            New Template
+          </Button>
         </div>
 
         {/* Templates list */}
@@ -169,10 +169,10 @@ export default function TemplatesPage() {
               <p className="mt-1 mb-4 text-sm text-muted-foreground">
                 Create your first email template to get started.
               </p>
-              <CreateTemplateDialog
-                projectId={projectId}
-                onTemplateCreated={fetchData}
-              />
+              <Button onClick={() => router.push(`/projects/${projectId}/templates/new`)}>
+                <Plus className="mr-2 size-4" />
+                New Template
+              </Button>
             </CardContent>
           </Card>
         ) : (

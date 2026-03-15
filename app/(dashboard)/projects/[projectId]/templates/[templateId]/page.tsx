@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EditTemplateDialog } from "@/components/templates/edit-template-dialog";
 import { DeleteTemplateDialog } from "@/components/templates/delete-template-dialog";
 import { TemplatePreview } from "@/components/templates/template-preview";
 import {
@@ -22,6 +21,7 @@ import {
   Tag,
   Code,
   FileText,
+  Pencil,
 } from "lucide-react";
 import type { Template } from "@/types";
 
@@ -175,10 +175,18 @@ export default function TemplatePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <EditTemplateDialog
-              template={template}
-              onTemplateUpdated={fetchTemplate}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                router.push(
+                  `/projects/${projectId}/templates/${templateId}/edit`
+                )
+              }
+            >
+              <Pencil className="mr-2 size-4" />
+              Edit
+            </Button>
             <DeleteTemplateDialog
               templateId={template.id}
               templateName={template.name}
