@@ -2,22 +2,36 @@ import { z } from "zod";
 
 // Common language codes
 export const commonLanguages = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "nl", name: "Dutch" },
-  { code: "pl", name: "Polish" },
-  { code: "ru", name: "Russian" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "ar", name: "Arabic" },
-  { code: "hi", name: "Hindi" },
-  { code: "tr", name: "Turkish" },
-] as const;
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "pt", name: "Português", flag: "🇵🇹" },
+  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
+  { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+  { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", name: "ไทย", flag: "🇹🇭" },
+  { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "sv", name: "Svenska", flag: "🇸🇪" },
+  { code: "da", name: "Dansk", flag: "🇩🇰" },
+  { code: "fi", name: "Suomi", flag: "🇫🇮" },
+  { code: "no", name: "Norsk", flag: "🇳🇴" },
+  { code: "cs", name: "Čeština", flag: "🇨🇿" },
+  { code: "el", name: "Ελληνικά", flag: "🇬🇷" },
+  { code: "he", name: "עברית", flag: "🇮🇱" },
+  { code: "uk", name: "Українська", flag: "🇺🇦" },
+  { code: "ro", name: "Română", flag: "🇷🇴" },
+  { code: "hu", name: "Magyar", flag: "🇭🇺" },
+];
+
 
 export const createContactSchema = z.object({
   name: z

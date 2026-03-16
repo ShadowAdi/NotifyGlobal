@@ -74,9 +74,9 @@ export default function NewContactPage() {
     // Parse tags from comma-separated string
     const tagsArray = data.tags
       ? data.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter((tag) => tag.length > 0)
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
       : [];
 
     const result = await createContact(
@@ -110,7 +110,6 @@ export default function NewContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
@@ -127,7 +126,6 @@ export default function NewContactPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-6 py-10">
-        {/* Back button */}
         <Button
           variant="ghost"
           onClick={() => router.push(`/projects/${projectId}/contacts`)}
@@ -137,7 +135,6 @@ export default function NewContactPage() {
           Back to Contacts
         </Button>
 
-        {/* Page header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">New Contact</h1>
           <p className="mt-1 text-muted-foreground">
@@ -146,7 +143,6 @@ export default function NewContactPage() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
