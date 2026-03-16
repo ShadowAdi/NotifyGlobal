@@ -129,7 +129,7 @@ export default function EventDetailPage() {
     "name": "John",
     "language": "en"${variablesSnippet}
   }' \\
-  https://YOUR_DOMAIN.com/api/events/trigger`;
+  ${process.env.NEXT_PUBLIC_DEPLOYED_URL}/api/events/trigger`;
   }, [event, requiredVars]);
 
   const handleSave = async () => {
