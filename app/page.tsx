@@ -1,6 +1,9 @@
+'use client'
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 export default function Home() {
+  const { user, isLoading, logout } = useAuth();
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200">
@@ -11,12 +14,15 @@ export default function Home() {
             </div>
             <span className="text-xl font-semibold text-gray-900">NotifyGlobal</span>
           </div>
-          <div className="flex items-center gap-4">
+          {!isLoading && !user ? <div className="flex items-center gap-4">
             <Link href="/sign-in" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
             <Link href="/sign-up" className="bg-foreground text-white px-4 py-2 rounded-lg  transition-colors">
               Get Started
             </Link>
-          </div>
+          </div> :
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">Dashboard</Link>
+            </div>}
         </nav>
       </header>
 
