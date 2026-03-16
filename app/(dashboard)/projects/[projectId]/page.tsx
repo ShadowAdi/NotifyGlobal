@@ -55,7 +55,7 @@ export default function ProjectPage() {
     const [projectResult, templatesResult, apiKeyResult, eventsResult, contactsResult, campaignsResult] = await Promise.all([
       getProjectById(projectId, token),
       getTemplatesByProject(projectId, token, { limit: 1 }),
-      GetAllKeys(token, token),
+      GetAllKeys(token, projectId),
       getEventsByProject(projectId, token, { limit: 1 }),
       getContactsByProject(projectId, token, { limit: 1 }),
       getAllCampaigns(projectId, token, { limit: 1 }),

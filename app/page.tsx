@@ -12,7 +12,7 @@ export default function Home() {
             <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">N</span>
             </div>
-            <span className="text-xl font-semibold text-gray-900">NotifyGlobal</span>
+            <span className="hidden md:block text-xl font-semibold text-gray-900">NotifyGlobal</span>
           </div>
           {!isLoading && !user ? <div className="flex items-center gap-4">
             <Link href="/sign-in" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
