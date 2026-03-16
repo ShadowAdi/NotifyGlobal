@@ -147,7 +147,7 @@ export default function ProjectPage() {
       description: "Trigger definitions for automated notifications",
       icon: Zap,
       count: "—",
-      href: null,
+      href: `/projects/${projectId}/events`,
     },
     {
       label: "API Keys",
