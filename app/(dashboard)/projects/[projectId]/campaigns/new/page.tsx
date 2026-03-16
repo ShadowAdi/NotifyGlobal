@@ -199,7 +199,6 @@ export default function NewCampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
@@ -230,7 +229,6 @@ export default function NewCampaignPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Info */}
           <Card>
             <CardHeader>
               <CardTitle>Campaign Details</CardTitle>
@@ -258,9 +256,9 @@ export default function NewCampaignPage() {
                   className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="email">Email</option>
-                  <option value="sms">SMS</option>
-                  <option value="discord">Discord</option>
-                  <option value="slack">Slack</option>
+                  <option value="sms" disabled>SMS (Coming Soon)</option>
+                  <option value="discord" disabled>Discord (Coming Soon)</option>
+                  <option value="slack" disabled>Slack (Coming Soon)</option>
                 </select>
               </div>
 
@@ -486,9 +484,8 @@ export default function NewCampaignPage() {
                         {contacts.map((contact) => (
                           <tr
                             key={contact.id}
-                            className={`hover:bg-muted/30 transition-colors ${
-                              selectedContactIds.has(contact.id) ? "bg-muted/50" : ""
-                            }`}
+                            className={`hover:bg-muted/30 transition-colors ${selectedContactIds.has(contact.id) ? "bg-muted/50" : ""
+                              }`}
                           >
                             <td className="px-4 py-3">
                               <input
