@@ -35,7 +35,7 @@ export default function Home() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
             Write once, deliver everywhere. Send multilingual notifications to your contacts via email—translated automatically into their native language.
           </p>
-          {!isLoading && !user ? <div className="flex items-center gap-4">
+          {!isLoading && !user ? <div className="flex items-center gap-8 mx-auto w-full justify-center">
             <Link href="/sign-in" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
             <Link href="/sign-up" className="bg-foreground text-white px-4 py-2 rounded-lg  transition-colors ">
               Get Started
