@@ -5,16 +5,12 @@ export const createCampaignSchema = z.object({
     .string()
     .min(1, "Campaign name is required")
     .max(100, "Campaign name must be less than 100 characters"),
-  channel: z.enum(["email", "sms", "discord", "slack"], {
-    required_error: "Channel is required",
-  }),
+  channel: z.enum(["email", "sms", "discord", "slack"]),
   templateId: z.string().optional(),
   subject: z.string().max(200, "Subject must be less than 200 characters").optional(),
   message: z.string().max(50000, "Message must be less than 50,000 characters").optional(),
   variables: z.record(z.string(), z.string()).optional(),
-  filterType: z.enum(["manual", "all", "language", "tags"], {
-    required_error: "Filter type is required",
-  }),
+  filterType: z.enum(["manual", "all", "language", "tags"]),
   filterLanguage: z.string().optional(),
   filterTags: z.string().optional(), // Comma-separated string
   contactIds: z.array(z.string()).optional(),
