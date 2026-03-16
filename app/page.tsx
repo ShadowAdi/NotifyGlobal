@@ -1,25 +1,25 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="border-b border-gray-200">
         <nav className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">N</span>
             </div>
             <span className="text-xl font-semibold text-gray-900">NotifyGlobal</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</a>
-            <a href="#" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <Link href="/sign-in" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
+            <Link href="/sign-up" className="bg-foreground text-white px-4 py-2 rounded-lg  transition-colors">
               Get Started
-            </a>
+            </Link>
           </div>
         </nav>
       </header>
 
-      {/* Hero Section */}
       <main className="mx-auto max-w-7xl px-6">
         <div className="py-20 md:py-32 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
@@ -30,7 +30,7 @@ export default function Home() {
             Write once, deliver everywhere. Send multilingual notifications to your contacts via email—translated automatically into their native language.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#" className="bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+            <a href="#" className="bg-foreground text-white px-8 py-4 rounded-lg font-medium  transition-colors">
               Start Free Trial
             </a>
             <a href="#" className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors">
@@ -39,7 +39,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Features Section */}
         <div className="py-20 border-t border-gray-200">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-16">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-12">
@@ -72,7 +71,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Benefits Section */}
         <div className="py-20 border-t border-gray-200">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-16">Why NotifyGlobal?</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -103,19 +101,17 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CTA Section */}
         <div className="py-20 border-t border-gray-200 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Go Global?</h2>
           <p className="text-gray-600 mb-8 text-lg">
             Start sending multilingual notifications today.
           </p>
-          <a href="#" className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+          <a href="#" className="inline-block bg-foreground text-white px-8 py-4 rounded-lg font-medium  transition-colors">
             Get Started Free
           </a>
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-gray-200 py-8">
         <div className="mx-auto max-w-7xl px-6 text-center text-gray-600">
           <p>&copy; 2026 NotifyGlobal. Built for startup founders.</p>
