@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   const fetchProjects = useCallback(async () => {
     if (!token) return;
-    setProjectsLoading(true);
+setProjectsLoading(true)
     const result = await getUserProjects(token, { limit: 50 });
     if (result.success) {
       setProjects(result.data.data);
@@ -62,13 +62,6 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  const stats = [
-    { label: "Projects", value: String(projects.length), icon: FolderOpen },
-    { label: "Templates", value: "—", icon: Mail },
-    { label: "Contacts", value: "—", icon: Users },
-    { label: "Campaigns", value: "—", icon: BarChart3 },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -96,7 +89,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main content */}
       <main className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -108,29 +100,10 @@ export default function DashboardPage() {
           <CreateProjectDialog onProjectCreated={fetchProjects} />
         </div>
 
-        {/* Stats grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <stat.icon className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-foreground">
-                  {stat.value}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {/* Projects section */}
         <div className="mt-10">
           <h2 className="mb-4 text-xl font-semibold text-foreground">
-            Your Projects
+            Your Projects ({projects.length})
           </h2>
 
           {projectsLoading ? (
