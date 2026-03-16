@@ -276,8 +276,15 @@ export default function EventDetailPage() {
                 <div className="grid gap-1">
                   <p className="text-sm font-medium">Template variables</p>
                   <p className="text-xs text-muted-foreground">
-                    Built-ins like <span className="font-mono">{{`{{name}}`}}</span> and{" "}
-                    <span className="font-mono">{{`{{email}}`}}</span> are automatic. Any extra variables must be sent in{" "}
+                    Built-ins like{" "}
+                    <span className="font-mono">
+                      {"{{name}}"}
+                    </span>{" "}
+                    and{" "}
+                    <span className="font-mono">
+                      {"{{email}}"}
+                    </span>{" "}
+                    are automatic. Any extra variables must be sent in{" "}
                     <span className="font-mono">variables</span>.
                   </p>
                   {requiredVars.length > 0 ? (

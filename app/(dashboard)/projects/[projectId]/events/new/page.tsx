@@ -246,7 +246,11 @@ export default function NewEventPage() {
                       className="font-mono text-xs"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Your backend can pass values for variables like <span className="font-mono">{{`{{link}}`}}</span> in the trigger API call.
+                      Your backend can pass values for variables like{" "}
+                      <span className="font-mono">
+                        {"{{link}}"}
+                      </span>{" "}
+                      in the trigger API call.
                     </p>
                   </div>
                 </>
