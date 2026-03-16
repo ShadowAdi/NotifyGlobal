@@ -60,12 +60,12 @@ export function DeleteCampaignDialog({
       <AlertDialogTrigger
         render={
           <Button
-            variant="destructive"
+          
             size="sm"
-            className="gap-2 h-8 px-3"
+            className="gap-2 h-8 px-3 "
           >
             <Trash2 className="mr-2 size-4" />
-            Delete
+           <span className="text-white">Delete</span> 
           </Button>
         }
       />

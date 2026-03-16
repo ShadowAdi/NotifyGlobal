@@ -20,6 +20,7 @@ import {
 import { Loader2, ArrowLeft, Info, CheckSquare, Square } from "lucide-react";
 import type { Project, Contact, Template } from "@/types";
 import { getTemplatesByProject } from "@/actions";
+import { extractTemplateVariables } from "@/lib/template-helpers";
 
 export default function NewCampaignPage() {
   const params = useParams();
@@ -29,6 +30,7 @@ export default function NewCampaignPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const [campaignVariables, setCampaignVariables] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const projectId = params.projectId as string;
@@ -86,6 +88,39 @@ export default function NewCampaignPage() {
 
   const filterType = watch("filterType");
   const useTemplate = watch("templateId");
+  const watchSubject = watch("subject");
+  const watchMessage = watch("message");
+
+  const builtinVars = new Set([
+    "name",
+    "email",
+    "language",
+    "discord_username",
+    "discordUsername",
+  ]);
+
+  const selectedTemplate = useTemplate
+    ? templates.find((t) => t.id === useTemplate) ?? null
+    : null;
+
+  const activeVariables = (() => {
+    const vars = selectedTemplate
+      ? selectedTemplate.variables ?? []
+      : extractTemplateVariables(watchSubject ?? "", watchMessage ?? "");
+    return vars.filter((v) => v && !builtinVars.has(v));
+  })();
+
+  useEffect(() => {
+    // Keep only variables that are currently used (prevents stale keys).
+    setCampaignVariables((prev) => {
+      const next: Record<string, string> = {};
+      for (const key of activeVariables) {
+        next[key] = prev[key] ?? "";
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useTemplate, watchSubject, watchMessage, templates.length]);
 
   const toggleSelectAll = () => {
     if (selectedContactIds.size === contacts.length) {
@@ -134,6 +169,7 @@ export default function NewCampaignPage() {
         templateId: data.templateId || undefined,
         subject: data.subject || undefined,
         message: data.message || undefined,
+        variables: campaignVariables,
         filterType: data.filterType,
         filterLanguage: data.filterLanguage || undefined,
         filterTags: filterTagsArray,
@@ -302,6 +338,36 @@ export default function NewCampaignPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Variables */}
+          {activeVariables.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Variables</CardTitle>
+                <CardDescription>
+                  These variables appear in your subject/body. Built-in variables like {"{{name}}"} and {"{{email}}"} are filled automatically; the ones below must be provided.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                {activeVariables.map((variable) => (
+                  <div key={variable} className="grid gap-2">
+                    <Label htmlFor={`var-${variable}`}>{"{{"}{variable}{"}}"}</Label>
+                    <Input
+                      id={`var-${variable}`}
+                      placeholder={`Value for ${variable}`}
+                      value={campaignVariables[variable] ?? ""}
+                      onChange={(e) =>
+                        setCampaignVariables((prev) => ({
+                          ...prev,
+                          [variable]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Filter Type */}
           <Card>

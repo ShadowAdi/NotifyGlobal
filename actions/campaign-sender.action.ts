@@ -106,9 +106,20 @@ export const SendCampaign = async (
         let sentCount = 0;
         let failedCount = 0;
 
+        const campaignVariables =
+            (campaign.variables ?? null) as Record<string, unknown> | null;
+
         for (const contact of contactList) {
-            const personalizedSubject = replaceVariables(emailSubject, contact);
-            const personalizedBody = replaceVariables(emailBody, contact);
+            const contactData = {
+                ...contact,
+                metadata: {
+                    ...(campaignVariables ?? {}),
+                    ...(((contact as unknown as { metadata?: unknown }).metadata as Record<string, unknown>) ?? {}),
+                },
+            };
+
+            const personalizedSubject = replaceVariables(emailSubject, contactData);
+            const personalizedBody = replaceVariables(emailBody, contactData);
 
             const { subject: finalSubject, body: finalBody, translatedLanguage } =
                 await translateContent(

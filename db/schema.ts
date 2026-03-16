@@ -84,6 +84,7 @@ export const campaigns = pgTable('campaigns', {
   name: text('name').notNull(),
   subject: text('subject'), // Optional - only needed if no template, otherwise uses template subject
   message: text('message'), // Optional message body if no template
+  variables: jsonb('variables'), // Campaign-level variables for {{placeholders}} (applies to all contacts)
   channel: text('channel').notNull().default('email'), // email, sms, discord, slack
   filterType: text('filter_type').notNull().default('manual'), // manual, all, language, tags
   filterLanguage: text('filter_language'), // Language code if filterType is 'language'

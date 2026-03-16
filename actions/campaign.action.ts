@@ -199,6 +199,7 @@ export const createCampaign = async (
             name: payload.name,
             subject: payload.subject || null,
             message: payload.message || null,
+            variables: payload.variables || null,
             channel: payload.channel,
             filterType: payload.filterType,
             filterLanguage: payload.filterLanguage || null,
@@ -486,6 +487,7 @@ export const updateCampaign = async (
         if (payload.name !== undefined) updateData.name = payload.name;
         if (payload.subject !== undefined) updateData.subject = payload.subject;
         if (payload.message !== undefined) updateData.message = payload.message;
+        if (payload.variables !== undefined) updateData.variables = payload.variables;
         if (payload.channel !== undefined) updateData.channel = payload.channel;
         if (payload.status !== undefined) updateData.status = payload.status;
         if (payload.scheduledAt !== undefined) updateData.scheduledAt = payload.scheduledAt;

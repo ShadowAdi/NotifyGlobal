@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { getCampaign, updateCampaign } from "@/actions/campaign.action";
+import { getTemplateById } from "@/actions/template.action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +18,15 @@ import {
 } from "@/lib/validators/campaign";
 import { Loader2, ArrowLeft, Info, Send } from "lucide-react";
 import type { Campaign } from "@/types";
+import { extractTemplateVariables } from "@/lib/template-helpers";
 
 export default function EditCampaignPage() {
   const params = useParams();
   const router = useRouter();
   const { user, token, isLoading: authLoading } = useAuth();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [templateVariables, setTemplateVariables] = useState<string[] | null>(null);
+  const [campaignVariables, setCampaignVariables] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,13 +77,59 @@ export default function EditCampaignPage() {
         channel: campaign.channel,
         subject: campaign.subject || "",
         message: campaign.message || "",
+        variables: (campaign.variables ?? null) as Record<string, string> | null,
         status: campaign.status,
         scheduledAt: campaign.scheduledAt
           ? new Date(campaign.scheduledAt).toISOString().slice(0, 16)
           : "",
       });
+
+      setCampaignVariables(((campaign.variables ?? {}) as Record<string, string>) ?? {});
     }
   }, [campaign, reset]);
+
+  useEffect(() => {
+    const loadTemplateVars = async () => {
+      if (!token || !campaign?.templateId) {
+        setTemplateVariables(null);
+        return;
+      }
+      const tpl = await getTemplateById(campaign.templateId, token);
+      if (tpl.success) {
+        setTemplateVariables(tpl.data.variables ?? []);
+      } else {
+        setTemplateVariables(null);
+      }
+    };
+    loadTemplateVars();
+  }, [campaign?.templateId, token]);
+
+  const builtinVars = new Set([
+    "name",
+    "email",
+    "language",
+    "discord_username",
+    "discordUsername",
+  ]);
+
+  const activeVariables = (() => {
+    if (!campaign) return [];
+    const vars = campaign.templateId
+      ? templateVariables ?? []
+      : extractTemplateVariables(campaign.subject ?? "", campaign.message ?? "");
+    return (vars ?? []).filter((v) => v && !builtinVars.has(v));
+  })();
+
+  useEffect(() => {
+    setCampaignVariables((prev) => {
+      const next: Record<string, string> = {};
+      for (const key of activeVariables) {
+        next[key] = prev[key] ?? "";
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign?.templateId, templateVariables, campaign?.subject, campaign?.message]);
 
   const onSubmit = async (data: UpdateCampaignFormValues) => {
     if (!token) {
@@ -95,6 +145,7 @@ export default function EditCampaignPage() {
         channel: data.channel,
         subject: data.subject || undefined,
         message: data.message || undefined,
+        variables: campaignVariables,
         status: data.status,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
       },
@@ -271,6 +322,37 @@ export default function EditCampaignPage() {
                     )}
                   </div>
                 </>
+              )}
+
+              {activeVariables.length > 0 && (
+                <div className="grid gap-3">
+                  <div className="grid gap-1">
+                    <p className="text-sm font-medium">Template Variables</p>
+                    <p className="text-xs text-muted-foreground">
+                      Built-in variables like {"{{name}}"} and {"{{email}}"} are filled automatically. Provide values for the variables below.
+                    </p>
+                  </div>
+                  <div className="grid gap-4">
+                    {activeVariables.map((variable) => (
+                      <div key={variable} className="grid gap-2">
+                        <Label htmlFor={`edit-var-${variable}`}>
+                          {"{{"}{variable}{"}}"}
+                        </Label>
+                        <Input
+                          id={`edit-var-${variable}`}
+                          placeholder={`Value for ${variable}`}
+                          value={campaignVariables[variable] ?? ""}
+                          onChange={(e) =>
+                            setCampaignVariables((prev) => ({
+                              ...prev,
+                              [variable]: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               <div className="grid gap-2">

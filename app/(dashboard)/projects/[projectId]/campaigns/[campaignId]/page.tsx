@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { getCampaign } from "@/actions/campaign.action";
 import { SendCampaign } from "@/actions/campaign-sender.action";
+import { createCampaign } from "@/actions/campaign.action";
+import { getTemplateById } from "@/actions/template.action";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +16,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { DeleteCampaignDialog } from "@/components/campaigns/delete-campaign-dialog";
 import {
   Loader2,
@@ -41,6 +54,9 @@ export default function CampaignPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [reuseAfterSend, setReuseAfterSend] = useState(true);
+  const [templateVariables, setTemplateVariables] = useState<string[] | null>(null);
 
   const projectId = params.projectId as string;
   const campaignId = params.campaignId as string;
@@ -54,6 +70,12 @@ export default function CampaignPage() {
 
     if (result.success) {
       setCampaign(result.data);
+      if (result.data.templateId) {
+        const tpl = await getTemplateById(result.data.templateId, token);
+        if (tpl.success) setTemplateVariables(tpl.data.variables ?? []);
+      } else {
+        setTemplateVariables(null);
+      }
     } else {
       setError(result.error);
     }
@@ -73,14 +95,31 @@ export default function CampaignPage() {
     }
   }, [token, campaignId, projectId, fetchCampaign]);
 
+  const activeVariables = (() => {
+    const builtinVars = new Set([
+      "name",
+      "email",
+      "language",
+      "discord_username",
+      "discordUsername",
+    ]);
+    const vars = campaign?.templateId ? templateVariables ?? [] : [];
+    return vars.filter((v) => v && !builtinVars.has(v));
+  })();
+
+  const missingVariables = (() => {
+    if (!campaign) return [];
+    const values = (campaign.variables ?? {}) as Record<string, string>;
+    return activeVariables.filter((v) => !String(values?.[v] ?? "").trim());
+  })();
+
   const handleSendCampaign = async () => {
     if (!token || !campaign) return;
-
-    const confirmed = confirm(
-      `Are you sure you want to send "${campaign.name}"? This will send messages to all selected contacts.`
-    );
-
-    if (!confirmed) return;
+    if (missingVariables.length > 0) {
+      toast.error("Please fill required template variables before sending.");
+      router.push(`/projects/${projectId}/campaigns/${campaignId}/edit`);
+      return;
+    }
 
     setSending(true);
     const result = await SendCampaign(campaignId, token);
@@ -88,11 +127,35 @@ export default function CampaignPage() {
     if (result.success) {
       toast.success("Campaign sent successfully!");
       fetchCampaign(); // Refresh campaign data
+
+      if (reuseAfterSend) {
+        const created = await createCampaign(
+          projectId,
+          {
+            name: `${campaign.name} (copy)`,
+            channel: campaign.channel,
+            templateId: campaign.templateId ?? undefined,
+            subject: campaign.subject ?? undefined,
+            message: campaign.message ?? undefined,
+            variables: (campaign.variables ?? {}) as Record<string, string>,
+            filterType: campaign.filterType,
+            filterLanguage: campaign.filterLanguage ?? undefined,
+            filterTags: campaign.filterTags ?? undefined,
+            contactIds: campaign.contactIds ?? undefined,
+          },
+          token
+        );
+        if (created.success) {
+          toast.success("Draft copy created for reuse.");
+          router.push(`/projects/${projectId}/campaigns/${created.data.id}/edit`);
+        }
+      }
     } else {
       toast.error(result.error || "Failed to send campaign");
     }
 
     setSending(false);
+    setConfirmOpen(false);
   };
 
   const getStatusBadge = (status: Campaign["status"]) => {
@@ -212,19 +275,74 @@ export default function CampaignPage() {
           <div className="flex items-center gap-2">
             {campaign.status === "draft" && (
               <>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleSendCampaign}
-                  disabled={sending}
-                >
-                  {sending ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 size-4" />
-                  )}
-                  Send Campaign
-                </Button>
+                <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                  <AlertDialogTrigger
+                    render={
+                      <Button variant="default" size="sm" disabled={sending}>
+                        {sending ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 size-4" />
+                        )}
+                        Send Campaign
+                      </Button>
+                    }
+                  />
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Send this campaign?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will send <strong>{campaign.name}</strong> to the selected contacts.
+                        {activeVariables.length > 0 && (
+                          <span className="block mt-2">
+                            Template variables required:{" "}
+                            <span className="font-mono">
+                              {activeVariables.map((v) => `{{${v}}}`).join(", ")}
+                            </span>
+                          </span>
+                        )}
+                        {missingVariables.length > 0 && (
+                          <span className="block mt-2 text-destructive">
+                            Missing values for:{" "}
+                            <span className="font-mono">
+                              {missingVariables.map((v) => `{{${v}}}`).join(", ")}
+                            </span>
+                            . Go to Edit to fill them.
+                          </span>
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="mt-1 size-4"
+                        checked={reuseAfterSend}
+                        onChange={(e) => setReuseAfterSend(e.target.checked)}
+                      />
+                      <span>
+                        Create a draft copy after sending (so you can reuse without rebuilding).
+                      </span>
+                    </label>
+
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          if (missingVariables.length > 0) {
+                            router.push(`/projects/${projectId}/campaigns/${campaignId}/edit`);
+                            setConfirmOpen(false);
+                            return;
+                          }
+                          handleSendCampaign();
+                        }}
+                        disabled={sending}
+                      >
+                        Send
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <Button
                   variant="outline"
                   size="sm"

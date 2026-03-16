@@ -13,6 +13,11 @@ export interface Campaign {
   name: string;
   subject: string | null;
   message: string | null;
+  /**
+   * Campaign-level variables applied to every recipient.
+   * Contact metadata can still override per-recipient, if present.
+   */
+  variables?: Record<string, string> | null;
   channel: CampaignChannel;
   filterType: CampaignFilterType;
   filterLanguage: string | null;
@@ -34,6 +39,7 @@ export interface CreateCampaignDto {
   name: string;
   subject?: string; // Optional - required only if templateId not provided
   message?: string; // Optional - required if templateId not provided
+  variables?: Record<string, string>; // Campaign-level variable values
   channel: CampaignChannel;
   filterType: CampaignFilterType; // How to select contacts
   filterLanguage?: string; // Required if filterType is 'language'
@@ -47,6 +53,7 @@ export interface UpdateCampaignDto {
   name?: string;
   subject?: string;
   message?: string | null;
+  variables?: Record<string, string> | null;
   channel?: CampaignChannel;
   status?: CampaignStatus;
   scheduledAt?: Date | null;
