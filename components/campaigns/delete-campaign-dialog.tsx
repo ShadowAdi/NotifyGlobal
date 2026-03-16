@@ -57,14 +57,18 @@ export function DeleteCampaignDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger>
-        <button
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-destructive text-destructive-foreground shadow hover:bg-destructive/90 h-8 px-3"
-        >
-          <Trash2 className="mr-2 size-4" />
-          Delete
-        </button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-2 h-8 px-3"
+          >
+            <Trash2 className="mr-2 size-4" />
+            Delete
+          </Button>
+        }
+      />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
