@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 export default function Home() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200">
@@ -21,7 +21,7 @@ export default function Home() {
             </Link>
           </div> :
             <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">Dashboard</Link>
+              <Link href="/dashboard" className="text-gray-600 underline hover:text-gray-900 transition-colors">Dashboard</Link>
             </div>}
         </nav>
       </header>
@@ -35,14 +35,15 @@ export default function Home() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
             Write once, deliver everywhere. Send multilingual notifications to your contacts via email—translated automatically into their native language.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/sign-in" className="bg-foreground text-white px-8 py-4 rounded-lg font-medium  transition-colors">
-              Sign In
+          {!isLoading && !user ? <div className="flex items-center gap-4">
+            <Link href="/sign-in" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
+            <Link href="/sign-up" className="bg-foreground text-white px-4 py-2 rounded-lg  transition-colors ">
+              Get Started
             </Link>
-            <Link href="/sign-up" className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors">
-              Sign Up
-            </Link>
-          </div>
+          </div> :
+            <div className="flex items-center gap-4 mx-auto w-full">
+              <Link href="/dashboard" className="text-white bg-foreground px-4 py-2 rounded-lg  mx-auto">Dashboard</Link>
+            </div>}
         </div>
 
         <div className="py-20 border-t border-gray-200">
