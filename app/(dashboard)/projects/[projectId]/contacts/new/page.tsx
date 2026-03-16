@@ -192,7 +192,7 @@ export default function NewContactPage() {
                 >
                   {commonLanguages.map((lang) => (
                     <option key={lang.code} value={lang.code}>
-                      {lang.name} ({lang.code})
+                      <span>{lang.flag}</span> {lang.name} ({lang.code})
                     </option>
                   ))}
                 </select>
