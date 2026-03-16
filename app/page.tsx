@@ -30,12 +30,12 @@ export default function Home() {
             Write once, deliver everywhere. Send multilingual notifications to your contacts via email—translated automatically into their native language.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#" className="bg-foreground text-white px-8 py-4 rounded-lg font-medium  transition-colors">
+            <Link href="/sign-in" className="bg-foreground text-white px-8 py-4 rounded-lg font-medium  transition-colors">
               Start Free Trial
-            </a>
-            <a href="#" className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors">
+            </Link>
+            <Link href="/sign-up" className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors">
               View Documentation
-            </a>
+            </Link>
           </div>
         </div>
 
