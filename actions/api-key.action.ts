@@ -163,8 +163,11 @@ export const DeleteApiKey = async (
             };
         }
 
-
-        const [existingKey] = await db.select().from(apiKeys).where(eq(apiKeys.id, keyId)).limit(1);
+        const [existingKey] = await db
+            .select()
+            .from(apiKeys)
+            .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, authResult.userId)))
+            .limit(1);
         if (!existingKey) {
             return {
                 success: false,

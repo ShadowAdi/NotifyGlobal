@@ -154,7 +154,7 @@ export default function ProjectPage() {
       description: "Authentication keys for API access",
       icon: Key,
       count: "—",
-      href: null,
+      href: `/projects/${projectId}/api-keys`,
     },
     {
       label: "Campaigns",
