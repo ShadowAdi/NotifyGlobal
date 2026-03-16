@@ -29,6 +29,7 @@ import {
 import { getEventById, updateEvent, deleteEvent, getTemplateById } from "@/actions";
 import type { Event } from "@/types";
 import { ArrowLeft, Copy, Loader2, Trash2, Zap } from "lucide-react";
+import { extractTemplateVariables } from "@/lib/template-helpers";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -63,7 +64,11 @@ export default function EventDetailPage() {
         const tpl = await getTemplateById(res.data.templateId, token);
         if (tpl.success) setTemplateVars(tpl.data.variables ?? []);
       } else {
-        setTemplateVars(null);
+        const inlineVars = extractTemplateVariables(
+          res.data.subject ?? "",
+          res.data.message ?? ""
+        );
+        setTemplateVars(inlineVars);
       }
     } else {
       toast.error(res.error || "Event not found");
@@ -88,23 +93,6 @@ export default function EventDetailPage() {
     }
   };
 
-  const triggerExample = useMemo(() => {
-    if (!event) return "";
-    return `curl -X POST \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "eventId": "${event.eventId}",
-    "email": "user@example.com",
-    "name": "John",
-    "language": "en",
-    "variables": {
-      "link": "https://example.com/reset"
-    }
-  }' \\
-  https://YOUR_DOMAIN.com/api/events/trigger`;
-  }, [event]);
-
   const builtinVars = new Set([
     "name",
     "email",
@@ -116,6 +104,33 @@ export default function EventDetailPage() {
   const requiredVars = useMemo(() => {
     return (templateVars ?? []).filter((v) => v && !builtinVars.has(v));
   }, [templateVars]);
+
+  const triggerExample = useMemo(() => {
+    if (!event) return "";
+
+    let variablesSnippet = "";
+    if (requiredVars.length > 0) {
+      const entries = requiredVars
+        .slice(0, 3)
+        .map(
+          (v) => `      "${v}": "VALUE_FOR_${v.toUpperCase()}"`
+        )
+        .join(",\n");
+
+      variablesSnippet = `,\n    "variables": {\n${entries}\n    }`;
+    }
+
+    return `curl -X POST \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "eventId": "${event.eventId}",
+    "email": "user@example.com",
+    "name": "John",
+    "language": "en"${variablesSnippet}
+  }' \\
+  https://YOUR_DOMAIN.com/api/events/trigger`;
+  }, [event, requiredVars]);
 
   const handleSave = async () => {
     if (!token || !event) return;

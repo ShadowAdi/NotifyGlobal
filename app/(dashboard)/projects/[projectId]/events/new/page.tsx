@@ -240,17 +240,14 @@ export default function NewEventPage() {
                     <Textarea
                       id="evt-message"
                       rows={8}
-                      placeholder={"Hi {{name}},\n\nYour link: {{link}}"}
+                      placeholder={"Hi {{name}},\n\nYour custom content with {{variables}}"}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       className="font-mono text-xs"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Your backend can pass values for variables like{" "}
-                      <span className="font-mono">
-                        {"{{link}}"}
-                      </span>{" "}
-                      in the trigger API call.
+                      Your backend can pass values for any custom variables in the{" "}
+                      <span className="font-mono">variables</span> field of the trigger API payload.
                     </p>
                   </div>
                 </>
