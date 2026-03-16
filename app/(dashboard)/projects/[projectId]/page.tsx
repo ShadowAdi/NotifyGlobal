@@ -30,6 +30,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { Project } from "@/types";
+import { GetAllKeys, getEventsByProject } from "@/actions";
 
 export default function ProjectPage() {
   const params = useParams();
@@ -38,6 +39,8 @@ export default function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [templateCount, setTemplateCount] = useState<number>(0);
   const [contactCount, setContactCount] = useState<number>(0);
+  const [apiCount, setApiCount] = useState<number>(0);
+  const [eventsCount, setEventsCount] = useState<number>(0);
   const [campaignCount, setCampaignCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +52,11 @@ export default function ProjectPage() {
     setLoading(true);
     setError(null);
 
-    const [projectResult, templatesResult, contactsResult, campaignsResult] = await Promise.all([
+    const [projectResult, templatesResult, apiKeyResult, eventsResult, contactsResult, campaignsResult] = await Promise.all([
       getProjectById(projectId, token),
       getTemplatesByProject(projectId, token, { limit: 1 }),
+      GetAllKeys(token, token),
+      getEventsByProject(projectId, token, { limit: 1 }),
       getContactsByProject(projectId, token, { limit: 1 }),
       getAllCampaigns(projectId, token, { limit: 1 }),
     ]);
@@ -64,6 +69,13 @@ export default function ProjectPage() {
 
     if (templatesResult.success) {
       setTemplateCount(templatesResult.data.total);
+    }
+
+    if (eventsResult.success) {
+      setEventsCount(eventsResult.data.total);
+    }
+    if (apiKeyResult.success) {
+      setApiCount(apiKeyResult.data.length);
     }
 
     if (contactsResult.success) {
@@ -146,14 +158,14 @@ export default function ProjectPage() {
       label: "Events",
       description: "Trigger definitions for automated notifications",
       icon: Zap,
-      count: "—",
+      count: String(eventsCount),
       href: `/projects/${projectId}/events`,
     },
     {
       label: "API Keys",
       description: "Authentication keys for API access",
       icon: Key,
-      count: "—",
+      count: String(apiCount),
       href: `/projects/${projectId}/api-keys`,
     },
     {
